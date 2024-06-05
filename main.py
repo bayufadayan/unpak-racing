@@ -31,15 +31,15 @@ class HomePage(Entity):
             texture="gui_assets/mbim.png",
         )
 
-        self.title = Text(
-            text="Pakuan Racing",
-            position=(-0.5, 0.4, 0),
-            scale=2,
-            font=FONT,
-            color=color.rgb(55 / 255, 31 / 255, 83 / 255),
-            parent=self.main_menu,
-            enabled=True,
-        )
+        # self.title = Text(
+        #     text="Pakuan Racing",
+        #     position=(-0.5, 0.4, 0),
+        #     scale=2,
+        #     font=FONT,
+        #     color=color.rgb(55 / 255, 31 / 255, 83 / 255),
+        #     parent=self.main_menu,
+        #     enabled=True,
+        # )
 
         Entity(
             parent=self.main_menu,
