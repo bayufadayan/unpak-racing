@@ -1,3 +1,21 @@
+import sys
+import os
+
+# Setup DLL path untuk PyInstaller frozen build (agar Panda3D bisa load graphics pipe)
+if getattr(sys, 'frozen', False):
+    _bundle = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+    _panda_dir = os.path.join(_bundle, 'panda3d')
+    # Tambahkan ke PATH agar Windows bisa menemukan Panda3D DLLs
+    os.environ['PATH'] = _bundle + os.pathsep + _panda_dir + os.pathsep + os.environ.get('PATH', '')
+    if os.path.isdir(_panda_dir):
+        try:
+            os.add_dll_directory(_panda_dir)
+            os.add_dll_directory(_bundle)
+        except AttributeError:
+            pass  # Python < 3.8
+    # Ganti working directory ke _MEIPASS agar asset path relative bisa ditemukan
+    os.chdir(_bundle)
+
 from ursina import *
 from ursina.prefabs.dropdown_menu import DropdownMenu, DropdownMenuButton
 import random

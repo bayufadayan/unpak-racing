@@ -1,0 +1,40 @@
+========================================
+   UNPAK RACING - Windows Release
+========================================
+
+Thank you for downloading Unpak Racing!
+
+QUICK START:
+------------
+1. Double-click "UnpakRacing.exe" to start the game
+2. Use Arrow Keys to control your car
+3. Avoid enemy vehicles
+4. Press ESC to quit anytime
+
+CONTROLS:
+---------
+<- ->  : Move Left/Right
+^  v   : Move Up/Down
+ESC    : Quit Game
+
+SYSTEM REQUIREMENTS:
+--------------------
+- Windows 10 or higher
+- OpenGL compatible GPU
+- 100 MB free disk space
+
+TROUBLESHOOTING:
+----------------
+If the game doesn't start:
+- Make sure ALL files in this folder are kept together (do not move just the .exe)
+- The _internal folder, Config.prc, and all .dll files MUST be in the same folder as UnpakRacing.exe
+- Try running as Administrator if antivirus blocks it
+
+For full documentation, see README.md
+
+CREDITS:
+--------
+Game inspired by: https://github.com/thecrood/2D-Car-Game-Using-Ursina-Game-Engine
+Built with Python & Ursina Game Engine
+
+Enjoy the game!
