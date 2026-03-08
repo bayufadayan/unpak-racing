@@ -210,14 +210,68 @@ class GamePlay(Entity):
         self.road_1 = Entity(
             model="quad", texture="gameplay_assets/road", scale=9, z=1, enabled=False
         )
-        self.road_2 = duplicate(self.road_1, y=8, enabled=False)
+        # y=9 (= scale) agar tile persis nyambung tanpa celah
+        self.road_2 = duplicate(self.road_1, y=9, enabled=False)
         self.pair = [self.road_1, self.road_2]
         self.gameplay_elements.extend(self.pair)
 
         self.enemies = []
-        invoke(self.newenemy, delay=1)  # Memanggil musuh pertama kali setelah 1 detik
+        self.spawning = False  # Flag untuk kontrol spawn musuh
+        self.game_active = False
+
+        # --- Game Over Screen (UI layer) ---
+        self.game_over_screen = Entity(parent=camera.ui, enabled=False)
+
+        Entity(
+            parent=self.game_over_screen,
+            model="quad",
+            color=color.rgba(0, 0, 0, 0.75),
+            scale=(2, 2),
+            z=1,
+        )
+
+        Text(
+            text="GAME OVER",
+            parent=self.game_over_screen,
+            origin=(0, 0),
+            y=0.12,
+            scale=5,
+            font=FONT,
+            color=color.red,
+            z=0,
+        )
+
+        self.retry_button = Button(
+            text="Play Again",
+            parent=self.game_over_screen,
+            y=-0.02,
+            scale=(0.32, 0.08),
+            color=color.rgba(1, 1, 1, 0.9),
+            highlight_color=color.rgba(161 / 255, 89 / 255, 1, 0.9),
+            radius=0.15,
+            z=0,
+        )
+        self.retry_button.text_entity.font = FONT
+        self.retry_button.text_entity.color = color.rgb(55 / 255, 31 / 255, 83 / 255)
+        self.retry_button.on_click = self.retry
+
+        self.menu_button = Button(
+            text="Main Menu",
+            parent=self.game_over_screen,
+            y=-0.12,
+            scale=(0.32, 0.08),
+            color=color.rgba(1, 1, 1, 0.9),
+            highlight_color=color.rgba(161 / 255, 89 / 255, 1, 0.9),
+            radius=0.15,
+            z=0,
+        )
+        self.menu_button.text_entity.font = FONT
+        self.menu_button.text_entity.color = color.rgb(55 / 255, 31 / 255, 83 / 255)
+        self.menu_button.on_click = self.go_to_menu
 
     def newenemy(self):
+        if not self.spawning:
+            return
         val = random.uniform(-4 / 3.5, 3 / 3.5)
         new = Entity(
             model="quad",
@@ -226,20 +280,65 @@ class GamePlay(Entity):
             y=25 / 3.5,
             color=color.random_color(),
             rotation_z=-90 if val < 0 else 90,
-            enabled=True,  # Pastikan musuh baru diaktifkan
+            enabled=True,
             scale=(5 / 3.5, 2 / 3.5),
         )
         self.enemies.append(new)
         self.gameplay_elements.append(new)
-        invoke(self.newenemy, delay=1)  # Memanggil musuh baru setiap 1 detik
+        invoke(self.newenemy, delay=1)  # Lanjut spawn selama spawning=True
+
+    def show_game_over(self):
+        self.game_active = False
+        self.spawning = False
+        self.game_over_screen.enabled = True
+
+    def retry(self):
+        self.game_over_screen.enabled = False
+        # Reset posisi mobil
+        self.car.x = 0
+        self.car.y = -3
+        # Reset jalan
+        self.road_1.y = 0
+        self.road_2.y = 9
+        # Hancurkan semua musuh
+        for enemy in self.enemies[:]:
+            if enemy in self.gameplay_elements:
+                self.gameplay_elements.remove(enemy)
+            destroy(enemy)
+        self.enemies.clear()
+        # Mulai lagi
+        self.game_active = True
+        self.spawning = True
+        invoke(self.newenemy, delay=1)
+
+    def go_to_menu(self):
+        self.game_over_screen.enabled = False
+        self.disable()
+        home_page.enable()
 
     def enable(self):
         super().enable()
         print("Gameplay enabled")
+        # Reset posisi jalan & mobil setiap kali masuk gameplay
+        self.car.x = 0
+        self.car.y = -3
+        self.road_1.y = 0
+        self.road_2.y = 9
         for element in self.gameplay_elements:
             element.enabled = True
+        self.game_active = True
+        if not self.spawning:
+            self.spawning = True
+            invoke(self.newenemy, delay=1)  # Mulai spawn musuh
 
     def disable(self):
+        self.spawning = False  # Hentikan spawn musuh
+        # Hancurkan semua musuh yang ada
+        for enemy in self.enemies[:]:
+            if enemy in self.gameplay_elements:
+                self.gameplay_elements.remove(enemy)
+            destroy(enemy)
+        self.enemies.clear()
         super().disable()
         print("Gameplay disabled")
         for element in self.gameplay_elements:
@@ -254,8 +353,9 @@ class GamePlay(Entity):
     def move_roads(self):
         for road in self.pair:
             road.y -= 3 * time.dt
-            if road.y < -10:
-                road.y += 20
+            # Saat tile keluar layar bawah, langsung sambung ke atas (2 * scale = 18)
+            if road.y < -9:
+                road.y += 18
 
     def move_enemies(self):
         for enemy in self.enemies[:]:
@@ -269,17 +369,20 @@ class GamePlay(Entity):
                 if enemy in self.enemies:
                     self.enemies.remove(enemy)
                 destroy(enemy)
-            if enemy in self.enemies and self.car.intersects(enemy).hit:
-                print("Collision detected!")
-                self.car.shake()
+            elif enemy in self.enemies and self.car.intersects(enemy).hit:
+                print("Collision detected! Game Over")
+                self.show_game_over()
+                return
 
     def updategame(self):
+        if not self.game_active:
+            return
         self.control_car()
         self.move_roads()
         self.move_enemies()
 
 
-app = Ursina(icon="gui_assets/unpak_racing_icon.ico")
+app = Ursina(icon="gui_assets/unpak_racing_icon.ico", fullscreen=True)
 
 home_page = HomePage()
 settings_page = SettingPage()
